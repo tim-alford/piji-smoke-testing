@@ -1,29 +1,71 @@
 # vim: ts=2
 import os
+from time import sleep
 import unittest
 from selenium import webdriver
+from selenium.webdriver import ChromeOptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
+from pandas import read_excel
+import openpyxl
+
 class SmokeTestProduction(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls):
-		cls.driver = webdriver.Chrome()
+		cls.options = ChromeOptions()
+		cls.options.add_experimental_option("prefs", {
+			"download.default_directory": ".",
+			"download.prompt_for_download": False,
+			"download.directory_upgrade": True,
+			"safebrowsing.enabled": True
+		})
+		cls.driver = webdriver.Chrome(options=cls.options)
 		cls.website = os.environ["WEBSITE_FOR_TESTING"]
 
 	@classmethod
 	def tearDownClass(cls):
 		cls.driver.quit()
+	
+	def does_download_exist(self, fileName):
+		user = os.environ["USER"]
+		downloadPath = f"/home/{user}/Downloads/{fileName}"
+		print(f"Checking path {downloadPath}")
+		return (os.path.exists(downloadPath), downloadPath)
 
-	def test_export_is_working(self):
-		pass
+	def test_outlet_export_is_working(self):
+		cls = self.__class__
+		cls.driver.get(cls.website)
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		cls.driver.find_element(By.ID, "DataMenu").click()
+		cls.driver.find_element(By.ID, "downloadExport").click()
+		download = "Australian News Index (PIJI).xlsx"
+		destination = None
+		while True:
+			(result, path) = self.does_download_exist(download)
+			if result:
+					destination = path
+					break
+			sleep(1)
+		self.assertTrue(destination is not None, "Failed to find XLSX export.")
+		try:
+			book = openpyxl.load_workbook(destination)
+			self.assertEqual(len(book.sheetnames), 2)
+			self.assertTrue("News producers" in book.sheetnames)
+			self.assertTrue("News entities" in book.sheetnames)
+			outlets = book["News producers"]
+			entities = book["News entities"]
+			self.assertTrue(outlets.max_row > 1, "Number of outlets in export should be non zero")
+			self.assertTrue(entities.max_row > 1, "Number of entities in export should be non zero")
+		finally:
+			os.remove(destination)
 
 	def test_outlets_view(self):
 		cls = self.__class__
 		cls.driver.get(cls.website)
 		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
 		rows = outlets.find_elements(By.TAG_NAME, "tr")
-		self.assertTrue(len(rows) > 0, "Some rows should exist")
+		self.assertTrue(len(rows) > 0, "Outlet count should be non zero")
 		cls.driver.save_screenshot("./screenshots/test_outlets_view.png")
 		ids = []
 		records = {}
