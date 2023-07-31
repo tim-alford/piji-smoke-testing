@@ -59,7 +59,35 @@ class SmokeTestProduction(unittest.TestCase):
 			self.assertTrue(state is not None and state != "")
 
 	def test_business_view(self):
-		pass
+		cls = self.__class__
+		cls.driver.get(cls.website)
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		businesses = cls.driver.find_element(By.ID, "businessPage")
+		self.assertTrue(businesses is not None)
+		businesses.click()
+		entities = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "BusinessTable"))
+		self.assertTrue(entities is not None)
+		cls.driver.save_screenshot("./screenshots/test_business_view.png")
+		rows = entities.find_elements(By.TAG_NAME, "tr")
+		self.assertTrue(len(rows) > 0, "Business entity count should be greater than zero")
+		ids = []
+		for r in rows:
+			rowId = r.get_attribute("id")
+			if rowId is not None and rowId != "":
+				tokens = rowId.split("_")
+				entityId = tokens[-1]
+				ids.append(entityId)
+		for i in ids:
+			entityType = f"Entity type_{i}"
+			name = f"Name_{i}"
+			name = cls.driver.find_element(By.ID, name)
+			entityType = cls.driver.find_element(By.ID, entityType)
+			self.assertTrue(name is not None)
+			self.assertTrue(entityType is not None)
+			name = name.text
+			entityType = entityType.text
+			self.assertTrue(name is not None and name != "")
+			self.assertTrue(entityType is not None and entityType != "")
 
 	def test_filter_outlets_primary_format(self):
 		pass
