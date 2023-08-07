@@ -267,3 +267,32 @@ class SmokeTestProduction(unittest.TestCase):
 			entity = cls.driver.find_element(By.ID, f"Outlet_{i}_news_entity")
 			entityName = entity.text.strip().lower()
 			self.assertEqual(entityName, business, f"Outlets should have a news entity of {business}, found {entityName}")
+	
+	def get_last_page(self):
+		cls = self.__class__
+		pages = cls.driver.find_elements(By.CLASS_NAME, "MuiPaginationItem-root")
+		numbers = map(lambda x: x.text.strip(), pages)
+		possible = [str(x) for x in list(range(1,100))]
+		numbers = list(filter(lambda x: x in possible, numbers))
+		numbers = [int(x) for x in numbers]
+		numbers.sort()
+		return numbers[-1]
+	
+	def view_page(self, n):
+		cls = self.__class__
+		pages = cls.driver.find_elements(By.CLASS_NAME, "MuiPaginationItem-root")
+		for p in pages:
+			if str(n) == p.text.strip():
+				p.click()
+				return
+		raise Exception(f"Failed to find page {n}")
+		
+	def test_viewing_all_business_pages(self):
+		cls = self.__class__
+		cls.driver.get(cls.businessWebsite)
+		businesses = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "BusinessTable"))
+		i = 1
+		pages = self.get_last_page()
+		while i <= pages:
+			self.view_page(i)
+			i += 1

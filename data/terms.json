@@ -7,11 +7,11 @@
 	"prod":{
 		"news_entity": "news corp",
 		"lga": "karr",
-		"entityType": "Other"
+		"entityType": "Australian Private Company"
 	},
 	"staging":{
 		"news_entity": "news corp",
 		"lga": "karr",
-		"entityType": "Other"
+		"entityType": "Australian Public Company"
 	}
 }
