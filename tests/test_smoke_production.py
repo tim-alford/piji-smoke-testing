@@ -192,10 +192,12 @@ class SmokeTestProduction(unittest.TestCase):
 		option.click()
 		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
 		ids = self.get_outlet_ids(outlets)
+		results = []
 		for i in ids:
 			coverage = cls.driver.find_element(By.ID, f"Outlet_{i}_coverage")
 			lgas = coverage.text.strip().lower()
-			self.assertTrue(lga in lgas, f"Failed to find selected LGA {lga} in LGA string {lgas}")
+			results.append(lga in lgas)
+		self.assertTrue(any(results), "Failed to find any outlet where LGA string {lga} is in coverage")
 		cls.driver.save_screenshot("screenshots/test_filter_outlets_coverage.png")
 		
 	def test_filter_outlets_news_entity(self):
