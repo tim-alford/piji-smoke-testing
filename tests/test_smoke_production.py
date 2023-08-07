@@ -30,6 +30,7 @@ class SmokeTestProduction(unittest.TestCase):
 		if "WEBSITE_FOR_TESTING" not in os.environ.keys():
 			raise Exception("Please set the WEBSITE_FOR_TESTING variable before running the suite")
 		cls.website = os.environ["WEBSITE_FOR_TESTING"]
+		cls.businessWebsite = f"{os.environ['WEBSITE_FOR_TESTING']}/businesses"
 		if "TEST_ENV" not in os.environ.keys():
 			raise Exception("Please set the TEST_ENV variable before running the suite")
 		cls.env = os.environ["TEST_ENV"]
@@ -77,6 +78,22 @@ class SmokeTestProduction(unittest.TestCase):
 			self.assertTrue(entities.max_row > 1, "Number of entities in export should be non zero")
 		finally:
 			os.remove(destination)
+	
+	def get_business_ids(self, table):
+		rows = table.find_elements(By.TAG_NAME, "tr")
+		self.assertTrue(len(rows) > 0, "Business count should be non zero")
+		ids = []
+		# find all outlet ids on this page
+		for row in rows:
+			id = row.get_attribute("id")
+			if id is not None and id != "":
+				tokens = id.split("_")
+				entityId = tokens[-1]
+				firstPart = tokens[0]
+				if firstPart != "GenericTableRow":
+					continue
+				ids.append(entityId)
+		return ids
 
 	def get_outlet_ids(self, table):
 		rows = table.find_elements(By.TAG_NAME, "tr")
@@ -142,8 +159,8 @@ class SmokeTestProduction(unittest.TestCase):
 				entityId = tokens[-1]
 				ids.append(entityId)
 		for i in ids:
-			entityType = f"Entity type_{i}"
-			name = f"Name_{i}"
+			entityType = f"GenericTableCell_Entity type_{i}"
+			name = f"GenericTableCell_Name_{i}"
 			name = cls.driver.find_element(By.ID, name)
 			entityType = cls.driver.find_element(By.ID, entityType)
 			self.assertTrue(name is not None)
@@ -214,7 +231,23 @@ class SmokeTestProduction(unittest.TestCase):
 		cls.driver.save_screenshot("screenshots/test_filter_outlets_coverage.png")
 		
 	def test_filter_entities_entity_type(self):
-		pass
+		cls = self.__class__
+		cls.driver.get(cls.businessWebsite)
+		businesses = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "BusinessTable"))
+		entityType = cls.driver.find_element(By.ID, "entityType")
+		entityType.click()
+		option = cls.terms["entityType"]
+		checkbox = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, f"entityType_{option}"))
+		checkbox.click()
+		businesses = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "BusinessTable"))
+		ids = self.get_business_ids(businesses)
+		self.assertTrue(len(ids) > 0, "There should be at least one business entity")
+		option = option.lower()
+		for i in ids:
+			entityType = f"GenericTableCell_Entity type_{i}"
+			entityType = cls.driver.find_element(By.ID, entityType)
+			entityType = entityType.text.strip().lower()
+			self.assertEqual(entityType, option, f"All visible business entities should be of entity type {option}")
 	
 	def test_filter_outlets_news_entity(self):
 		cls = self.__class__

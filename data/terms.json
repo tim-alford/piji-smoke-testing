@@ -1,14 +1,17 @@
 {
 	"local":{
 		"news_entity": "public interest",
-		"lga": "alice"
+		"lga": "alice",
+		"entityType": "Other"
 	},
 	"prod":{
 		"news_entity": "news corp",
-		"lga": "karr"
+		"lga": "karr",
+		"entityType": "Other"
 	},
 	"staging":{
 		"news_entity": "news corp",
-		"lga": "karr"
+		"lga": "karr",
+		"entityType": "Other"
 	}
 }
