@@ -41,13 +41,19 @@ class SmokeTestProduction(unittest.TestCase):
 		cls.driver.find_element(By.ID, "downloadExport").click()
 		download = "Australian News Index (PIJI).xlsx"
 		destination = None
+		timeout = 60
 		while True:
 			(result, path) = self.does_download_exist(download)
 			if result:
 					destination = path
 					break
 			sleep(1)
+			timeout -= 1
+			if timeout <= 0:
+				self.fail("Failed to find export within 60 seconds")
+				break
 		self.assertTrue(destination is not None, "Failed to find XLSX export.")
+		cls.driver.save_screenshot("./screenshots/test_outlet_export_is_working.png")
 		try:
 			book = openpyxl.load_workbook(destination)
 			self.assertEqual(len(book.sheetnames), 2)
@@ -60,15 +66,10 @@ class SmokeTestProduction(unittest.TestCase):
 		finally:
 			os.remove(destination)
 
-	def test_outlets_view(self):
-		cls = self.__class__
-		cls.driver.get(cls.website)
-		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
-		rows = outlets.find_elements(By.TAG_NAME, "tr")
+	def get_outlet_ids(self, table):
+		rows = table.find_elements(By.TAG_NAME, "tr")
 		self.assertTrue(len(rows) > 0, "Outlet count should be non zero")
-		cls.driver.save_screenshot("./screenshots/test_outlets_view.png")
 		ids = []
-		records = {}
 		# find all outlet ids on this page
 		for row in rows:
 			id = row.get_attribute("id")
@@ -76,6 +77,15 @@ class SmokeTestProduction(unittest.TestCase):
 				tokens = id.split("_")
 				outletId = tokens[-1]
 				ids.append(outletId)
+		return ids
+
+	def test_outlets_view(self):
+		cls = self.__class__
+		cls.driver.get(cls.website)
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		ids = self.get_outlet_ids(outlets)
+		records = {}
+		cls.driver.save_screenshot("./screenshots/test_outlets_view.png")
 		# check attributes for each outlet are visible
 		# name, format, scale, state all are required
 		for i in ids:
@@ -132,7 +142,64 @@ class SmokeTestProduction(unittest.TestCase):
 			self.assertTrue(entityType is not None and entityType != "")
 
 	def test_filter_outlets_primary_format(self):
-		pass
-
+		cls = self.__class__
+		cls.driver.get(cls.website)
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		cls.driver.find_element(By.ID, "primaryFormat").click()
+		cls.driver.find_element(By.ID, "primaryFormat_Print").click()
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		ids = self.get_outlet_ids(outlets)
+		cls.driver.save_screenshot("screenshots/test_filter_outlets_primary_format.png")
+		for i in ids:
+			fmt = f"Outlet_{i}_format"
+			fmt = cls.driver.find_element(By.ID, fmt)
+			self.assertTrue(fmt is not None, "Failed to find format cell")
+			fmt = fmt.text.strip()
+			self.assertEqual(fmt, "Print", "All outlets should a primary format of print")
+			
 	def test_filter_outlets_scale(self):
+		cls = self.__class__
+		cls.driver.get(cls.website)
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		cls.driver.find_element(By.ID, "scale").click()
+		cls.driver.find_element(By.ID, "scale_National").click()
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		ids = self.get_outlet_ids(outlets)
+		cls.driver.save_screenshot("screenshots/test_filter_outlets_scale.png")
+		for i in ids:
+			scale = f"Outlet_{i}_scale"
+			scale = cls.driver.find_element(By.ID, scale)
+			self.assertTrue(scale is not None, "Failed to find format cell")
+			scale = scale.text.strip()
+			self.assertEqual(scale, "National", "All outlets should a primary format of print")
+	
+	def test_filter_outlets_subservice(self):
+		pass
+	
+	def test_filter_outlets_broadcast_area(self):
+		pass
+	
+	def test_filter_outlets_coverage(self):
+		cls = self.__class__
+		cls.driver.get(cls.website)
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		cls.driver.find_element(By.ID, "coverage").click()
+		autocomplete = cls.driver.find_element(By.ID, "coverage_text_filter")
+		autocomplete.send_keys("alice")
+		popper = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.CLASS_NAME, "MuiAutocomplete-popper"))
+		option = cls.driver.find_element(By.ID, "coverage_text_filter-option-0")
+		lga = option.text.lower()
+		option.click()
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		ids = self.get_outlet_ids(outlets)
+		for i in ids:
+			coverage = cls.driver.find_element(By.ID, f"Outlet_{i}_coverage")
+			lgas = coverage.text.strip().lower()
+			self.assertTrue(lga in lgas, f"Failed to find selected LGA {lga} in LGA string {lgas}")
+		cls.driver.save_screenshot("screenshots/test_filter_outlets_coverage.png")
+		
+	def test_filter_outlets_news_entity(self):
+		pass
+	
+	def test_filter_entities_entity_type(self):
 		pass
