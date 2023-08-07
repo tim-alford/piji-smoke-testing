@@ -1,5 +1,6 @@
 # vim: ts=2
 import os
+import json
 from time import sleep
 import unittest
 from selenium import webdriver
@@ -10,7 +11,12 @@ from pandas import read_excel
 import openpyxl
 
 class SmokeTestProduction(unittest.TestCase):
-
+		
+	@classmethod
+	def loadTerms(cls):
+		with open("./data/terms.json", "r") as f:
+			return json.load(f)
+			
 	@classmethod
 	def setUpClass(cls):
 		cls.options = ChromeOptions()
@@ -21,8 +27,14 @@ class SmokeTestProduction(unittest.TestCase):
 			"safebrowsing.enabled": True
 		})
 		cls.driver = webdriver.Chrome(options=cls.options)
+		if "WEBSITE_FOR_TESTING" not in os.environ.keys():
+			raise Exception("Please set the WEBSITE_FOR_TESTING variable before running the suite")
 		cls.website = os.environ["WEBSITE_FOR_TESTING"]
-
+		if "TEST_ENV" not in os.environ.keys():
+			raise Exception("Please set the TEST_ENV variable before running the suite")
+		cls.env = os.environ["TEST_ENV"]
+		cls.terms = cls.loadTerms()[cls.env]
+		
 	@classmethod
 	def tearDownClass(cls):
 		cls.driver.quit()
@@ -185,7 +197,8 @@ class SmokeTestProduction(unittest.TestCase):
 		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
 		cls.driver.find_element(By.ID, "coverage").click()
 		autocomplete = cls.driver.find_element(By.ID, "coverage_text_filter")
-		autocomplete.send_keys("alice")
+		term = cls.terms["lga"]
+		autocomplete.send_keys(term)
 		popper = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.CLASS_NAME, "MuiAutocomplete-popper"))
 		option = cls.driver.find_element(By.ID, "coverage_text_filter-option-0")
 		lga = option.text.lower()
@@ -200,8 +213,24 @@ class SmokeTestProduction(unittest.TestCase):
 		self.assertTrue(any(results), "Failed to find any outlet where LGA string {lga} is in coverage")
 		cls.driver.save_screenshot("screenshots/test_filter_outlets_coverage.png")
 		
-	def test_filter_outlets_news_entity(self):
-		pass
-	
 	def test_filter_entities_entity_type(self):
 		pass
+	
+	def test_filter_outlets_news_entity(self):
+		cls = self.__class__
+		cls.driver.get(cls.website)
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		cls.driver.find_element(By.ID, "business_accordion").click()
+		autocomplete = cls.driver.find_element(By.ID, "news_business_text_filter")
+		term = cls.terms["news_entity"]
+		autocomplete.send_keys(term)
+		popper = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.CLASS_NAME, "MuiAutocomplete-popper"))
+		option = cls.driver.find_element(By.ID, "news_business_text_filter-option-0")
+		business = option.text.lower()
+		option.click()
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		ids = self.get_outlet_ids(outlets)
+		for i in ids:
+			entity = cls.driver.find_element(By.ID, f"Outlet_{i}_news_entity")
+			entityName = entity.text.strip().lower()
+			self.assertEqual(entityName, business, f"Outlets should have a news entity of {business}, found {entityName}")

@@ -1,0 +1,14 @@
+{
+	"local":{
+		"news_entity": "public interest",
+		"lga": "alice"
+	},
+	"prod":{
+		"news_entity": "news corp",
+		"lga": "karr"
+	},
+	"staging":{
+		"news_entity": "news corp",
+		"lga": "karr"
+	}
+}
