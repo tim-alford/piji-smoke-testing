@@ -2,16 +2,22 @@
 	"local":{
 		"news_entity": "public interest",
 		"lga": "alice",
-		"entityType": "Other"
+		"entityType": "Other",
+		"search_organisations": "Test",
+		"search_outlets": "Daily"
 	},
 	"prod":{
 		"news_entity": "news corp",
 		"lga": "karr",
-		"entityType": "Australian Private Company"
+		"entityType": "Australian Private Company",
+		"search_organisations": "press",
+		"search_outlets": "Daily"
 	},
 	"staging":{
 		"news_entity": "news corp",
 		"lga": "karr",
-		"entityType": "Australian Public Company"
+		"entityType": "Australian Public Company",
+		"search_organisations": "Press",
+		"search_outlets": "Daily"
 	}
 }

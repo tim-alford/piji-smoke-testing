@@ -6,6 +6,7 @@ import unittest
 from selenium import webdriver
 from selenium.webdriver import ChromeOptions
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 from pandas import read_excel
 import openpyxl
@@ -35,6 +36,7 @@ class SmokeTestProduction(unittest.TestCase):
 			raise Exception("Please set the TEST_ENV variable before running the suite")
 		cls.env = os.environ["TEST_ENV"]
 		cls.terms = cls.loadTerms()[cls.env]
+		cls.ORGANISATION_TYPES = [x.strip().lower() for x in ["Government", "Government agency", "Industry group", "Informal group", "Lobby group", "Non-government organisation", "Sector peak body", "Other"]]
 		
 	@classmethod
 	def tearDownClass(cls):
@@ -96,17 +98,38 @@ class SmokeTestProduction(unittest.TestCase):
 		return ids
 
 	def get_outlet_ids(self, table):
-		rows = table.find_elements(By.TAG_NAME, "tr")
+		cls = self.__class__
+		rows = cls.driver.find_elements(By.TAG_NAME, "tr")
 		self.assertTrue(len(rows) > 0, "Outlet count should be non zero")
 		ids = []
 		# find all outlet ids on this page
 		for row in rows:
-			id = row.get_attribute("id")
+			try:
+				id = row.get_attribute("id")
+			except Exception:
+				continue
 			if id is not None and id != "":
 				tokens = id.split("_")
+				if tokens[0] != "Outlet":
+					continue
 				outletId = tokens[-1]
 				ids.append(outletId)
 		return ids
+
+	def test_search_outlets_by_name(self):
+		cls = self.__class__
+		cls.driver.get(cls.website)
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		ids = self.get_outlet_ids(outlets)
+		term = cls.terms["search_outlets"].lower()
+		self.search_for(term)
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		ids = self.get_outlet_ids(outlets)
+		for i in ids:
+			name = f"Outlet_{i}_name"
+			name = cls.driver.find_element(By.ID, name)
+			name = name.text.strip().lower()
+			self.assertTrue(term in name, f"Failed to find term {term} in name {name}")
 
 	def test_outlets_view(self):
 		cls = self.__class__
@@ -268,6 +291,71 @@ class SmokeTestProduction(unittest.TestCase):
 			entityName = entity.text.strip().lower()
 			self.assertEqual(entityName, business, f"Outlets should have a news entity of {business}, found {entityName}")
 	
+	def test_view_organisations_table(self):
+		cls = self.__class__
+		cls.driver.get(cls.website)
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		organisations = cls.driver.find_element(By.ID, "organisationPage")
+		organisations.click()
+		organisations = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OrganisationsTable"))
+		self.assertTrue(organisations is not None, "Organisations table was None")
+		ids = self.get_business_ids(organisations)
+		self.assertTrue(len(ids) > 0, "There should be at least one organisation record")
+		for i in ids:
+			name = f"GenericTableCell_Name_{i}"
+			organisationType = f"GenericTableCell_Organisation Type_{i}"
+			dateCreated = f"GenericTableCell_Date Created_{i}"
+			shortDescription = f"GenericTableCell_Short Description_{i}"
+			name = cls.driver.find_element(By.ID, name)
+			organisationType = cls.driver.find_element(By.ID, organisationType)
+			dateCreated = cls.driver.find_element(By.ID, dateCreated)
+			shortDescription = cls.driver.find_element(By.ID, shortDescription)
+			self.assertTrue(name is not None)
+			self.assertTrue(dateCreated is not None)
+			self.assertTrue(shortDescription is not None)
+			self.assertTrue(organisationType is not None)
+			name = name.text.strip()
+			organisationType = organisationType.text.strip()
+			dateCreated = dateCreated.text.strip()
+			shortDescription = shortDescription.text.strip()
+			self.assertTrue(name is not None and len(name) > 0)
+			self.assertTrue(organisationType is not None and len(organisationType) > 0)
+			self.assertTrue(dateCreated is not None and len(dateCreated) > 0)
+			self.assertTrue(organisationType.lower() in cls.ORGANISATION_TYPES, f"Organisation type {organisationType} is not valid.")
+
+	def test_filter_organisations_by_type(self):
+		pass
+	
+	def test_search_organisations_zero_matches(self):
+		cls = self.__class__
+		cls.driver.get(cls.website)
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		organisations = cls.driver.find_element(By.ID, "organisationPage")
+		organisations.click()
+		organisations = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OrganisationsTable"))
+		self.search_for("DOESNT EXIST")
+		organisations = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OrganisationsTable"))
+		ids = self.get_business_ids(organisations)
+		self.assertEqual(len(ids), 0, "There should be no matching organisations")
+
+	def test_search_organisations_by_name(self):
+		cls = self.__class__
+		cls.driver.get(cls.website)
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		organisations = cls.driver.find_element(By.ID, "organisationPage")
+		organisations.click()
+		organisations = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OrganisationsTable"))
+		term = cls.terms["search_organisations"]
+		self.search_for(term)
+		organisations = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OrganisationsTable"))
+		ids = self.get_business_ids(organisations)
+		self.assertEqual(len(ids), 1, "There should be one matching organisation")
+		for i in ids:
+			name = f"GenericTableCell_Name_{i}"
+			name = cls.driver.find_element(By.ID, name)
+			name = name.text.strip().lower()
+			self.assertTrue(term.lower() in name, f"Organisation records should contain {term} in the name")
+			
 	def get_last_page(self):
 		cls = self.__class__
 		pages = cls.driver.find_elements(By.CLASS_NAME, "MuiPaginationItem-root")
@@ -286,6 +374,12 @@ class SmokeTestProduction(unittest.TestCase):
 				p.click()
 				return
 		raise Exception(f"Failed to find page {n}")
+		
+	def search_for(self, expression):
+		cls = self.__class__
+		search = cls.driver.find_element(By.ID, "search-input")
+		search.send_keys(expression)
+		search.send_keys(Keys.RETURN)
 		
 	def test_viewing_all_business_pages(self):
 		cls = self.__class__
