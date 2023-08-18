@@ -304,23 +304,18 @@ class SmokeTestProduction(unittest.TestCase):
 		for i in ids:
 			name = f"GenericTableCell_Name_{i}"
 			organisationType = f"GenericTableCell_Organisation Type_{i}"
-			dateCreated = f"GenericTableCell_Date Created_{i}"
-			shortDescription = f"GenericTableCell_Short Description_{i}"
+			shortDescription = f"GenericTableCell_Description_{i}"
 			name = cls.driver.find_element(By.ID, name)
 			organisationType = cls.driver.find_element(By.ID, organisationType)
-			dateCreated = cls.driver.find_element(By.ID, dateCreated)
 			shortDescription = cls.driver.find_element(By.ID, shortDescription)
 			self.assertTrue(name is not None)
-			self.assertTrue(dateCreated is not None)
 			self.assertTrue(shortDescription is not None)
 			self.assertTrue(organisationType is not None)
 			name = name.text.strip()
 			organisationType = organisationType.text.strip()
-			dateCreated = dateCreated.text.strip()
 			shortDescription = shortDescription.text.strip()
 			self.assertTrue(name is not None and len(name) > 0)
 			self.assertTrue(organisationType is not None and len(organisationType) > 0)
-			self.assertTrue(dateCreated is not None and len(dateCreated) > 0)
 			self.assertTrue(organisationType.lower() in cls.ORGANISATION_TYPES, f"Organisation type {organisationType} is not valid.")
 
 	def test_filter_organisations_by_type(self):
@@ -355,6 +350,22 @@ class SmokeTestProduction(unittest.TestCase):
 			name = cls.driver.find_element(By.ID, name)
 			name = name.text.strip().lower()
 			self.assertTrue(term.lower() in name, f"Organisation records should contain {term} in the name")
+		
+	def test_view_organisation_cards(self):
+		cls = self.__class__
+		cls.driver.get(cls.website)
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		organisations = cls.driver.find_element(By.ID, "organisationPage")
+		organisations.click()
+		organisations = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OrganisationsTable"))
+		ids = self.get_business_ids(organisations)
+		print("")
+		for i in ids:
+			print(f"Viewing cards for organisation {i}")
+			button = cls.driver.find_element(By.ID, f"View_Organisation_{i}")
+			button.click()
+			cards = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OrganisationCardContainer"))
+			cls.driver.find_element(By.ID, "OrganisationBack").click()
 			
 	def get_last_page(self):
 		cls = self.__class__
