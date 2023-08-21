@@ -379,6 +379,7 @@ class SmokeTestProduction(unittest.TestCase):
 				self.assertTrue(value != "", "Card values should not be empty")
 				self.assertTrue(header != "Card headers should not be empty")
 			cls.driver.find_element(By.ID, "OrganisationBack").click()
+			organisations = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OrganisationsTable"))
 		
 	def get_last_page(self):
 		cls = self.__class__
