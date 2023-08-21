@@ -229,8 +229,31 @@ class SmokeTestProduction(unittest.TestCase):
 		pass
 	
 	def test_filter_outlets_broadcast_area(self):
-		pass
-	
+		cls = self.__class__
+		cls.driver.get(cls.website)
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		cls.driver.find_element(By.ID, "coverage").click()
+		baFilter = cls.driver.find_element(By.ID, "broadcast_area_filter")
+		ba = cls.terms["broadcast_area_filter"]
+		baFilter.send_keys(ba)
+		popper = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.CLASS_NAME, "MuiAutocomplete-popper"))
+		option = cls.driver.find_element(By.ID, "broadcast_area_filter-option-0")
+		ba = option.text.lower()
+		option.click()
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		ids = self.get_outlet_ids(outlets)
+		self.assertTrue(len(ids) > 0, f"There should be at least one outlet in broadcast area {ba}")
+		for i in ids:
+			entity = f"Outlet_{i}_news_entity"
+			entity = cls.driver.find_element(By.ID, entity)
+			entity.click()
+			button = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "ViewOutlet"))
+			button.click()
+			container = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletCardContainer"))
+			broadcast = cls.driver.find_element(By.ID, "OutletBroadcastAreaCardValue")
+			broadcast = broadcast.text.lower().strip()
+			self.assertEqual(broadcast, ba, f"Broadcast area should be {ba} but was {broadcast}")
+			
 	def test_filter_outlets_coverage(self):
 		cls = self.__class__
 		cls.driver.get(cls.website)

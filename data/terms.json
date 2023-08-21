@@ -4,20 +4,23 @@
 		"lga": "alice",
 		"entityType": "Other",
 		"search_organisations": "Test",
-		"search_outlets": "Daily"
+		"search_outlets": "Daily",
+		"broadcast_area_filter": "adelaide ra1"
 	},
 	"prod":{
 		"news_entity": "news corp",
 		"lga": "karr",
 		"entityType": "Australian Private Company",
 		"search_organisations": "press",
-		"search_outlets": "Daily"
+		"search_outlets": "Daily",
+		"broadcast_area_filter": "gippsland"
 	},
 	"staging":{
 		"news_entity": "news corp",
 		"lga": "karr",
 		"entityType": "Australian Public Company",
 		"search_organisations": "country press new south wales",
-		"search_outlets": "Daily"
+		"search_outlets": "Daily",
+		"broadcast_area_filter": "gippsland"
 	}
 }
