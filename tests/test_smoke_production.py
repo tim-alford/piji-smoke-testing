@@ -364,9 +364,22 @@ class SmokeTestProduction(unittest.TestCase):
 			print(f"Viewing cards for organisation {i}")
 			button = cls.driver.find_element(By.ID, f"View_Organisation_{i}")
 			button.click()
-			cards = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OrganisationCardContainer"))
+			container = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OrganisationCardContainer"))
+			cards = cls.driver.find_elements(By.CLASS_NAME, "EntityCard")
+			self.assertTrue(len(cards) > 0, "There should be at least one card present, count was {len(cards)}")
+			for c in cards:
+				cardId = c.get_attribute("id")
+				value = f"{cardId}Value"
+				header = f"{cardId}Header"
+				# check that the header and value are present
+				value = cls.driver.find_element(By.ID, value)
+				header = cls.driver.find_element(By.ID, header)
+				value = value.text.strip()
+				header = header.text.strip()
+				self.assertTrue(value != "", "Card values should not be empty")
+				self.assertTrue(header != "Card headers should not be empty")
 			cls.driver.find_element(By.ID, "OrganisationBack").click()
-			
+		
 	def get_last_page(self):
 		cls = self.__class__
 		pages = cls.driver.find_elements(By.CLASS_NAME, "MuiPaginationItem-root")
@@ -401,3 +414,21 @@ class SmokeTestProduction(unittest.TestCase):
 		while i <= pages:
 			self.view_page(i)
 			i += 1
+	
+	def test_viewing_all_business_entities(self):
+		cls = self.__class__
+		cls.driver.get(cls.businessWebsite)
+		businesses = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "BusinessTable"))
+		ids = self.get_business_ids(businesses)
+		print("")
+		for i in ids:
+			print(f"Viewing business with id {i}")
+			view = f"View_Business_{i}"
+			button = cls.driver.find_element(By.ID, view)
+			button.click()
+			container = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "BusinessCardContainer"))
+			cards = cls.driver.find_elements(By.CLASS_NAME, "EntityCard")
+			self.assertTrue(len(cards) > 0, "Failed to find any cards ...")
+			back = cls.driver.find_element(By.ID, "BusinessBackButton")
+			back.click()
+			businesses = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "BusinessTable"))
