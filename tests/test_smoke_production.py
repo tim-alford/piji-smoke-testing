@@ -456,3 +456,40 @@ class SmokeTestProduction(unittest.TestCase):
 			back = cls.driver.find_element(By.ID, "BusinessBackButton")
 			back.click()
 			businesses = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "BusinessTable"))
+	
+	def test_download_organisations_export(self):
+		cls = self.__class__
+		cls.driver.get(cls.website)
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		organisations = cls.driver.find_element(By.ID, "organisationPage")
+		organisations.click()
+		organisations = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OrganisationsTable"))
+		ids = self.get_business_ids(organisations)
+		names = []
+		for i in ids:
+			name = f"GenericTableCell_Name_{i}"
+			name = cls.driver.find_element(By.ID, name)
+			name = name.text.strip().lower()
+			names.append(name)
+		cls.driver.find_element(By.ID, "DataMenu").click()
+		cls.driver.find_element(By.ID, "downloadExport").click()
+		download = "Australian News Index - Industry Bodies.csv"
+		destination = None
+		timeout = 60
+		while True:
+			(result, path) = self.does_download_exist(download)
+			if result:
+					destination = path
+					break
+			sleep(1)
+			timeout -= 1
+			if timeout <= 0:
+				self.fail("Failed to find export within 60 seconds")
+				break
+		self.assertTrue(destination is not None)
+		with open(destination, "r") as f:
+			records = [x.strip().split("|") for x in f.readlines() if len(x.strip()) > 0]
+			records = [x for x in records if len(x) > 0]
+			records = [records[i] for i in range(1,len(records))] # skip header
+			self.assertEqual(len(records), len(ids), "The number of records in the export should match the number of records on screen.") # minus one for header ...
+			self.assertTrue(all([x[2].lower() in names for x in records]), "Failed to verify all organisation names match.")
