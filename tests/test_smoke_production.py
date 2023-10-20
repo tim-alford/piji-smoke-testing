@@ -326,7 +326,7 @@ class SmokeTestProduction(unittest.TestCase):
 		self.assertTrue(len(ids) > 0, "There should be at least one organisation record")
 		for i in ids:
 			name = f"GenericTableCell_Name_{i}"
-			organisationType = f"GenericTableCell_Organisation Type_{i}"
+			organisationType = f"GenericTableCell_Type_{i}"
 			shortDescription = f"GenericTableCell_Description_{i}"
 			name = cls.driver.find_element(By.ID, name)
 			organisationType = cls.driver.find_element(By.ID, organisationType)
@@ -490,6 +490,6 @@ class SmokeTestProduction(unittest.TestCase):
 		with open(destination, "r") as f:
 			records = [x.strip().split("|") for x in f.readlines() if len(x.strip()) > 0]
 			records = [x for x in records if len(x) > 0]
-			records = [records[i] for i in range(1,len(records))] # skip header
+			records = [records[i] for i in range(1, len(records))] # skip header
 			self.assertEqual(len(records), len(ids), "The number of records in the export should match the number of records on screen.") # minus one for header ...
 			self.assertTrue(all([x[2].lower() in names for x in records]), "Failed to verify all organisation names match.")
