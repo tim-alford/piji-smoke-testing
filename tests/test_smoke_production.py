@@ -47,6 +47,78 @@ class SmokeTestProduction(unittest.TestCase):
 		downloadPath = f"/home/{user}/Downloads/{fileName}"
 		print(f"Checking path {downloadPath}")
 		return (os.path.exists(downloadPath), downloadPath)
+		
+	def test_business_export_is_working(self):
+		cls = self.__class__
+		cls.driver.get(cls.website)
+		outlets = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "OutletTable"))
+		businesses = cls.driver.find_element(By.ID, "businessPage")
+		self.assertTrue(businesses is not None)
+		businesses.click()
+		entities = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "BusinessTable"))
+		cls.driver.find_element(By.ID, "DataMenu").click()
+		cls.driver.find_element(By.ID, "downloadExport").click()
+		download = "Australian News Index - News Producers - PIJI.csv"
+		destination = None
+		timeout = 60
+		while True:
+			(result, path) = self.does_download_exist(download)
+			if result:
+					destination = path
+					break
+			sleep(1)
+			timeout -= 1
+			if timeout <= 0:
+				self.fail("Failed to find export within 60 seconds")
+				break
+		self.assertTrue(destination is not None, "Failed to find CSV export.")
+		with open(destination ,"r") as f:
+			records = [x.strip().split("|") for x in f.readlines()]
+		os.remove(destination)
+		headers = records[0]
+		self.assertTrue("entity_name" in headers)
+		self.assertTrue("entity_type" in headers)
+		self.assertTrue("entity_abn" in headers)
+		self.assertTrue("parent_entities" in headers)
+		self.assertTrue("child_entities" in headers)
+		self.assertTrue("associated_outlets" in headers)
+		records = [records[x] for x in range(0, len(records)) if x > 0]
+		entityNameIndex = headers.index("entity_name")
+		entityTypeIndex = headers.index("entity_type")
+		entityABNIndex = headers.index("entity_abn")
+		checked = 0
+		for r in records:
+			name = r[entityNameIndex]
+			abn = r[entityABNIndex]
+			entityType = r[entityTypeIndex]
+			name = name.strip().strip("\"")
+			abn = abn.strip().strip("\"").strip().upper()
+			entityType = entityType.strip().strip("\"").strip().upper()
+			self.search_for(name)
+			searched = name.strip().upper()
+			businesses = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "BusinessTable"))
+			ids = self.get_business_ids(businesses)
+			self.assertTrue(len(ids) > 0, "There should be at least one matching row")
+			first = ids[0]
+			nameSelector = f"GenericTableCell_Name_{first}"
+			abnSelector = f"GenericTableCell_ABN_{first}"
+			entityTypeSelector = f"GenericTableCell_Entity type_{first}"
+			nameCell = cls.driver.find_element(By.ID, nameSelector)
+			abnCell = cls.driver.find_element(By.ID, abnSelector)
+			entityTypeCell = cls.driver.find_element(By.ID, entityTypeSelector)
+			self.assertTrue(nameCell is not None)
+			self.assertTrue(abnCell is not None)
+			self.assertTrue(entityTypeCell is not None)
+			nameValue = nameCell.text.strip().upper()
+			abnValue = abnCell.text.strip().upper()
+			entityTypeValue = entityTypeCell.text.strip().upper()
+			self.assertTrue(nameValue.find(searched) != -1, f"The search value {searched} was not equal to {nameValue}")
+			self.assertTrue(abnValue.find(abn) != -1, f"The search value {abn} was not equal to {abnValue}")
+			self.assertTrue(entityTypeValue.find(entityType) != -1, f"The search value {entityType} was not equal to {entityTypeValue}")
+			self.clear_search()
+			checked += 1
+			if checked == 60:
+				break
 
 	def test_outlet_export_is_working(self):
 		cls = self.__class__
@@ -422,6 +494,11 @@ class SmokeTestProduction(unittest.TestCase):
 				p.click()
 				return
 		raise Exception(f"Failed to find page {n}")
+
+	def clear_search(self):
+		cls = self.__class__
+		search = cls.driver.find_element(By.ID, "ClearSearch")
+		search.click()
 		
 	def search_for(self, expression):
 		cls = self.__class__
