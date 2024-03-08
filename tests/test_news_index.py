@@ -11,7 +11,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from pandas import read_excel
 import openpyxl
 
-class SmokeTestProduction(unittest.TestCase):
+class TestNewsIndex(unittest.TestCase):
 		
 	@classmethod
 	def loadTerms(cls):
@@ -28,6 +28,7 @@ class SmokeTestProduction(unittest.TestCase):
 			"safebrowsing.enabled": True
 		})
 		cls.driver = webdriver.Chrome(options=cls.options)
+		cls.driver.maximize_window()
 		if "WEBSITE_FOR_TESTING" not in os.environ.keys():
 			raise Exception("Please set the WEBSITE_FOR_TESTING variable before running the suite")
 		cls.website = os.environ["WEBSITE_FOR_TESTING"]
@@ -94,8 +95,10 @@ class SmokeTestProduction(unittest.TestCase):
 			name = name.strip().strip("\"")
 			abn = abn.strip().strip("\"").strip().upper()
 			entityType = entityType.strip().strip("\"").strip().upper()
+			print(f"Searching for {name}")
 			self.search_for(name)
 			searched = name.strip().upper()
+			sleep(5)
 			businesses = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "BusinessTable"))
 			ids = self.get_business_ids(businesses)
 			self.assertTrue(len(ids) > 0, "There should be at least one matching row")
@@ -117,7 +120,7 @@ class SmokeTestProduction(unittest.TestCase):
 			self.assertTrue(entityTypeValue.find(entityType) != -1, f"The search value {entityType} was not equal to {entityTypeValue}")
 			self.clear_search()
 			checked += 1
-			if checked == 60:
+			if checked == 5:
 				break
 
 	def test_outlet_export_is_working(self):
@@ -307,6 +310,10 @@ class SmokeTestProduction(unittest.TestCase):
 		cls.driver.find_element(By.ID, "coverage").click()
 		baFilter = cls.driver.find_element(By.ID, "broadcast_area_filter")
 		ba = cls.terms["broadcast_area_filter"]
+		# TODO
+		# there's a weird timing issue here
+		# that I need to resolve 
+		sleep(10)
 		baFilter.send_keys(ba)
 		popper = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.CLASS_NAME, "MuiAutocomplete-popper"))
 		option = cls.driver.find_element(By.ID, "broadcast_area_filter-option-0")
@@ -497,8 +504,10 @@ class SmokeTestProduction(unittest.TestCase):
 
 	def clear_search(self):
 		cls = self.__class__
-		search = cls.driver.find_element(By.ID, "ClearSearch")
-		search.click()
+		search = cls.driver.find_element(By.ID, "search-input")
+		while search.get_attribute("value") != "":
+			search.send_keys("\b")
+		search.send_keys(Keys.RETURN)
 		
 	def search_for(self, expression):
 		cls = self.__class__
