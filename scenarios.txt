@@ -1,0 +1,86 @@
+Scenarios
+=========
+View outlets
+Search outlets by name (upper case, lower case)
+Search outlets by business name ( upper case, lower case)
+Search outlets by business common name (upper case, lower case)
+Search outlets by business callsign (upper case, lower case)
+Sort outlets by name
+Sort outlets by primary format
+Sort outlets by scale
+Sort outlets by coverage
+Sort outlets by state
+Sort outlets by news
+Sort outlets by state
+Sort outlets by news entity
+View outlet business information - existing business
+View outlet business information - no existing business
+View outlet - existing business
+View outlet - no existing business
+Navigate back from viewing outlet
+View outlet associated business
+View outlets next page
+View outlets previous page
+view outlets page N (2, 3, 4, 5 ... 25)
+View outlets last page
+Export outlet record
+Export all outlets records
+Export filtered outlet records ... (search, primary format, scale, coverage, news entity ...)
+View outlet filters (primary format, scale, coverage, news entity ...)
+Filter outlets by primary format single (print, radiuo, television, digital)
+Filter outlets by primary format many (print OR radio, ...)
+Filter outlets by scale single ( national, state, local, metro ...)
+Filter outlets by scale many (national OR state ...)
+Filter outlets by LGA - selection (select option ..)
+Filter outlets by LGA - typing (select option ..)
+Filter outlets by broadcast area - selection (test a couple broadcast areas)
+Filter outlets by broadcast area - typing (test a couple broadcast areas)
+Filter outlets by business entity - typing
+Filter outlets by business entity - selection
+Clear outlet filters 
+Clear outlet filters from page N
+View business entities
+Search business entities by name
+Search business entities by common name
+Clear business entitiy search
+Sort business entities by name
+Sort business entities by abn
+Sort business entities by entity type 
+Sort business entities by status
+Sort business entities by location
+View business entity
+Navigate back from viewing business entity
+View business entities page N
+View business entities last page
+View business entities next page
+View business entities previous page
+View business entity associated outlet
+View business entity filters
+Filter business entities by entity type - single
+Filter business entities by entity type - many
+Clear business filters from page N
+Clear business filters from first page
+Export business record
+Export all business records
+Export filtered business records (search, entity type ...)
+View organisations
+View organisation record
+export organisations
+export organisation record
+Filter organisation by name (upper case, lower case)
+Sort organisation by name
+View organsiation member - first
+View organisation member - last
+View more organisation members
+Navigate back from viewing organisation
+Navigate back from viewing organisation member
+View more about this visualisation
+Hover over news index link
+Hover over news changes link
+Hover over local news link
+Click news index link
+Click news changes link
+Click local news link
+Click view visualisation link (index, changes, local news)
+Click about link
+Change theme

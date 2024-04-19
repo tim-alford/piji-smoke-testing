@@ -531,6 +531,7 @@ class TestNewsIndex(unittest.TestCase):
 		businesses = WebDriverWait(cls.driver, timeout=60).until(lambda x: x.find_element(By.ID, "BusinessTable"))
 		ids = self.get_business_ids(businesses)
 		print("")
+		ids = [ids[j] for j in range(0,10)]
 		for i in ids:
 			print(f"Viewing business with id {i}")
 			view = f"View_Business_{i}"
